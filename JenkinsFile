@@ -1,33 +1,42 @@
 pipeline {
-    agent any
+    agent { label 'docker-agent' }
+
+    triggers {
+        pollSCM('* * * * *')
+    }
 
     environment {
-        TELEGRAM_TOKEN = "8623369528:AAFcJCLUJ0ZhYuNpZhEBJiItbGMpmgE_UKo"
-        TELEGRAM_CHAT_ID = "1653989745"
+        TELEGRAM_TOKEN = credentials('8623369528:AAFcJCLUJ0ZhYuNpZhEBJiItbGMpmgE_UKo')
+        TELEGRAM_CHAT_ID = credentials('1653989745')
 
-        TEXT_PRE_BUILD = "🚀 Jenkins building ${JOB_NAME}"
-        TEXT_SUCCESS_BUILD = "✅ ${JOB_NAME} SUCCESS"
-        TEXT_FAILURE_BUILD = "❌ ${JOB_NAME} FAILED"
-        TEXT_ABORTED_BUILD = "⚠️ ${JOB_NAME} ABORTED"
+        TEXT_SUCCESS = "✅ Build SUCCESS: ${JOB_NAME}"
+        TEXT_FAIL = "❌ Build FAILED: ${JOB_NAME}"
     }
 
     stages {
 
-        stage("Pre-Build") {
+        stage('Checkout Code') {
+            steps {
+                git 'https://github.com/Nuth68/laravel-test-jenkins.git'
+            }
+        }
+
+        stage('Build Laravel') {
             steps {
                 sh '''
-                curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage" \
-                -d chat_id="$TELEGRAM_CHAT_ID" \
-                -d text="$TEXT_PRE_BUILD"
+                composer install
+                php artisan key:generate
+                npm install
+                npm run build
                 '''
             }
         }
 
-        stage("Test") {
+        stage('Deploy with Ansible') {
             steps {
-                echo 'Testing...'
-                // 🔥 force failure to test
-                // sh 'exit 1'
+                sh '''
+                ansible-playbook -i inventory.ini playbook.yml
+                '''
             }
         }
     }
@@ -38,7 +47,7 @@ pipeline {
             sh '''
             curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage" \
             -d chat_id="$TELEGRAM_CHAT_ID" \
-            -d text="$TEXT_SUCCESS_BUILD"
+            -d text="$TEXT_SUCCESS"
             '''
         }
 
@@ -46,15 +55,7 @@ pipeline {
             sh '''
             curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage" \
             -d chat_id="$TELEGRAM_CHAT_ID" \
-            -d text="$TEXT_FAILURE_BUILD"
-            '''
-        }
-
-        aborted {
-            sh '''
-            curl -s -X POST "https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage" \
-            -d chat_id="$TELEGRAM_CHAT_ID" \
-            -d text="$TEXT_ABORTED_BUILD"
+            -d text="$TEXT_FAIL"
             '''
         }
     }
