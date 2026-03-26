@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -24,24 +25,29 @@ pipeline {
                 '''
             }
         }
-
     }
 
     post {
         success {
-            sh '''
-            curl -s -X POST https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage \
-            -d chat_id=$TELEGRAM_CHAT_ID \
-            -d text="✅ SUCCESS: ${JOB_NAME}"
-            '''
+            script {
+                sh '''
+                curl -s -X POST https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage \
+                -d chat_id=$TELEGRAM_CHAT_ID \
+                -d text="✅ SUCCESS: ${JOB_NAME}"
+                '''
+            }
         }
 
         failure {
-            sh '''
-            curl -s -X POST https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage \
-            -d chat_id=$TELEGRAM_CHAT_ID \
-            -d text="❌ FAILED: ${JOB_NAME}"
-            '''
+            script {
+                node {
+                    sh '''
+                    curl -s -X POST https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage \
+                    -d chat_id=$TELEGRAM_CHAT_ID \
+                    -d text="❌ FAILED: ${JOB_NAME}"
+                    '''
+                }
+            }
         }
     }
 }
