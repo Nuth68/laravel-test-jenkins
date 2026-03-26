@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        TELEGRAM_TOKEN = credentials('8623369528:AAFcJCLUJ0ZhYuNpZhEBJiItbGMpmgE_UKo') // the ID in Jenkins credentials
-        TELEGRAM_CHAT_ID = credentials('1653989745') // the ID in Jenkins credentials
+        TELEGRAM_TOKEN = credentials('8623369528:AAFcJCLUJ0ZhYuNpZhEBJiItbGMpmgE_UKo') // Jenkins credentials ID
+        TELEGRAM_CHAT_ID = credentials('1653989745') // Jenkins credentials ID
     }
 
     stages {
@@ -27,19 +27,23 @@ pipeline {
 
     post {
         success {
-            sh """
-            curl -s -X POST https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage \
-            -d chat_id=${env.TELEGRAM_CHAT_ID} \
-            -d text="✅ SUCCESS: ${env.JOB_NAME}"
-            """
+            script {
+                sh """
+                curl -s -X POST https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage \
+                -d chat_id=${env.TELEGRAM_CHAT_ID} \
+                -d text='✅ SUCCESS: ${env.JOB_NAME}'
+                """
+            }
         }
 
         failure {
-            sh """
-            curl -s -X POST https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage \
-            -d chat_id=${env.TELEGRAM_CHAT_ID} \
-            -d text="❌ FAILED: ${env.JOB_NAME}"
-            """
+            script {
+                sh """
+                curl -s -X POST https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage \
+                -d chat_id=${env.TELEGRAM_CHAT_ID} \
+                -d text='❌ FAILED: ${env.JOB_NAME}'
+                """
+            }
         }
     }
 }
