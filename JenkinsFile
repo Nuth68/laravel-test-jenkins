@@ -3,14 +3,6 @@ pipeline {
 
     stages {
 
-        stage('Clone') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/Nuth68/laravel-test-jenkins.git',
-                    credentialsId: 'test'   // your git credential
-            }
-        }
-
         stage('Build Laravel') {
             steps {
                 sh '''
