@@ -1,11 +1,6 @@
 pipeline {
     agent any
 
-    environment {
-        TELEGRAM_TOKEN = credentials('8623369528:AAFcJCLUJ0ZhYuNpZhEBJiItbGMpmgE_UKo')
-        TELEGRAM_CHAT_ID = credentials('1653989745')
-    }
-
     stages {
         stage('Clone') {
             steps {
@@ -28,24 +23,34 @@ pipeline {
     post {
         success {
             script {
-                node {  // This ensures a workspace/agent is available
-                    sh """
-                        curl -s -X POST https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage \
-                        -d chat_id=${env.TELEGRAM_CHAT_ID} \
-                        -d text='✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.BUILD_URL})'
-                    """
+                withCredentials([
+                    string(credentialsId: '8623369528:AAFcJCLUJ0ZhYuNpZhEBJiItbGMpmgE_UKo', variable: 'TELEGRAM_TOKEN'),
+                    string(credentialsId: '1653989745', variable: 'TELEGRAM_CHAT_ID')
+                ]) {
+                    node {
+                        sh """
+                            curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                            -d chat_id=${TELEGRAM_CHAT_ID} \
+                            -d text='✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.BUILD_URL})'
+                        """
+                    }
                 }
             }
         }
 
         failure {
             script {
-                node {  // Same here
-                    sh """
-                        curl -s -X POST https://api.telegram.org/bot${env.TELEGRAM_TOKEN}/sendMessage \
-                        -d chat_id=${env.TELEGRAM_CHAT_ID} \
-                        -d text='❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.BUILD_URL})'
-                    """
+                withCredentials([
+                    string(credentialsId: '8623369528:AAFcJCLUJ0ZhYuNpZhEBJiItbGMpmgE_UKo', variable: 'TELEGRAM_TOKEN'),
+                    string(credentialsId: '1653989745', variable: 'TELEGRAM_CHAT_ID')
+                ]) {
+                    node {
+                        sh """
+                            curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                            -d chat_id=${TELEGRAM_CHAT_ID} \
+                            -d text='❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.BUILD_URL})'
+                        """
+                    }
                 }
             }
         }
