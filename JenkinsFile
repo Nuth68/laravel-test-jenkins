@@ -1,6 +1,12 @@
 pipeline {
     agent any
 
+    environment {
+        // Set your Jenkins credentials for Telegram
+        TELEGRAM_TOKEN = credentials('8623369528:AAFcJCLUJ0ZhYuNpZhEBJiItbGMpmgE_UKo')  // Replace with your Jenkins credential ID
+        TELEGRAM_CHAT_ID = credentials('1653989745')    // Replace with your Jenkins credential ID
+    }
+
     stages {
         stage('Clone') {
             steps {
@@ -22,27 +28,16 @@ pipeline {
 
     post {
         success {
-            withCredentials([
-                string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_TOKEN'),
-                string(credentialsId: 'telegram-chat-id', variable: 'TELEGRAM_CHAT_ID')
-            ]) {
-                sh """
-                    curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
-                    -d chat_id=${TELEGRAM_CHAT_ID} \
-                    -d text='✅ SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.BUILD_URL})'
-                """
-            }
+            echo "Build succeeded ✅"
         }
-
         failure {
-            withCredentials([
-                string(credentialsId: 'telegram-bot-token', variable: 'TELEGRAM_TOKEN'),
-                string(credentialsId: 'telegram-chat-id', variable: 'TELEGRAM_CHAT_ID')
-            ]) {
+            echo "Build failed ❌"
+            script {
+                // Send Telegram message on failure
                 sh """
-                    curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
-                    -d chat_id=${TELEGRAM_CHAT_ID} \
-                    -d text='❌ FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER} (${env.BUILD_URL})'
+                curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                -d chat_id=${TELEGRAM_CHAT_ID} \
+                -d text="❌ Jenkins Build Failed! Job: ${JOB_NAME} #${BUILD_NUMBER} \nCheck console: ${BUILD_URL}"
                 """
             }
         }
