@@ -1,25 +1,29 @@
 pipeline {
     agent any
 
-    environment {
-        // Set your Jenkins credentials for Telegram
-        TELEGRAM_TOKEN = credentials('8623369528:AAFcJCLUJ0ZhYuNpZhEBJiItbGMpmgE_UKo')  // Replace with your Jenkins credential ID
-        TELEGRAM_CHAT_ID = credentials('1653989745')    // Replace with your Jenkins credential ID
-    }
-
     stages {
+
         stage('Clone') {
             steps {
-                git 'https://github.com/Nuth68/laravel-test-jenkins.git'
+                git branch: 'main',
+                    url: 'https://github.com/Nuth68/laravel-test-jenkins.git',
+                    credentialsId: 'test'   // your git credential
             }
         }
 
         stage('Build Laravel') {
             steps {
                 sh '''
+                    echo "Installing dependencies..."
                     composer install
+
+                    echo "Generating key..."
                     php artisan key:generate
+
+                    echo "Installing npm..."
                     npm install
+
+                    echo "Building assets..."
                     npm run build
                 '''
             }
@@ -27,18 +31,36 @@ pipeline {
     }
 
     post {
+
         success {
-            echo "Build succeeded ✅"
-        }
-        failure {
-            echo "Build failed ❌"
+            echo "Build SUCCESS ✅"
             script {
-                // Send Telegram message on failure
-                sh """
-                curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
-                -d chat_id=${TELEGRAM_CHAT_ID} \
-                -d text="❌ Jenkins Build Failed! Job: ${JOB_NAME} #${BUILD_NUMBER} \nCheck console: ${BUILD_URL}"
-                """
+                withCredentials([
+                    string(credentialsId: '8623369528:AAEwgKFCr-Xxojkh8y4NDMMCpTfMoWIazVU', variable: 'TOKEN'),
+                    string(credentialsId: '1653989745', variable: 'CHAT_ID')
+                ]) {
+                    sh """
+                    curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage \
+                    -d chat_id=${CHAT_ID} \
+                    -d text="✅ SUCCESS: ${JOB_NAME} #${BUILD_NUMBER} \n${BUILD_URL}"
+                    """
+                }
+            }
+        }
+
+        failure {
+            echo "Build FAILED ❌"
+            script {
+                withCredentials([
+                    string(credentialsId: '8623369528:AAEwgKFCr-Xxojkh8y4NDMMCpTfMoWIazVU', variable: 'TOKEN'),
+                    string(credentialsId: '1653989745', variable: 'CHAT_ID')
+                ]) {
+                    sh """
+                    curl -s -X POST https://api.telegram.org/bot${TOKEN}/sendMessage \
+                    -d chat_id=${CHAT_ID} \
+                    -d text="❌ FAILED: ${JOB_NAME} #${BUILD_NUMBER} \n${BUILD_URL}"
+                    """
+                }
             }
         }
     }
