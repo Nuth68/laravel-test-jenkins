@@ -28,7 +28,7 @@ pipeline {
                 sh '''
                 curl -s -X POST https://api.telegram.org/bot8725417417:AAEJYP7PnCqfKgMaAq7yNIZmTuRPCIbXkig/sendMessage \
                 -d chat_id=1653989745 \
-                -d text="❌ Build Failed" || true
+                -d text="❌ Build Failed" 
                 '''
             }
         }
