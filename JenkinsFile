@@ -1,38 +1,60 @@
 pipeline {
-    agent {label 'laravel'}
+    agent { label 'laravel' }
+
+    environment {
+        TELEGRAM_TOKEN = '8725417417:AAEJYP7PnCqfKgMaAq7yNIZmTuRPCIbXkig'
+        TELEGRAM_CHAT_ID = '1653989745'
+        REMOTE_HOST = '178.128.93.188'
+        REMOTE_USER = 'root'
+        DEPLOY_PATH = '/var/www/html'
+        DOCKER_IMAGE = 'nuth3333/i4c/jenkins-agent:latest'
+    }
+
     stages {
         stage('Build Laravel') {
-    steps {
-        sh '''
-            cp .env.example .env
-            composer install
-            php artisan key:generate
-            npm install
-            npm run build
-        '''
-    }
-}
-        
+            steps {
+                sh '''
+                    cp .env.example .env
+                    composer install
+                    php artisan key:generate
+                    npm install
+                    npm run build
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh '''
+                    docker build -t ${DOCKER_IMAGE} .
+                '''
+            }
+        }
+
+        stage('Deploy with Ansible') {
+            steps {
+                sh """
+                    ansible-playbook -i ${REMOTE_HOST}, deploy.yml \
+                        --extra-vars "remote_user=${REMOTE_USER} deploy_path=${DEPLOY_PATH} docker_image=${DOCKER_IMAGE}"
+                """
+            }
+        }
     }
 
     post {
         success {
-            node('laravel'){
             sh """
-            curl -s -X POST https://api.telegram.org/bot8725417417:AAEJYP7PnCqfKgMaAq7yNIZmTuRPCIbXkig/sendMessage \
-                 -d chat_id=1653989745 \
-                 -d text="✅ Build Success"
+                curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                     -d chat_id=${TELEGRAM_CHAT_ID} \
+                     -d text="✅ Build & Deploy Success"
             """
-            }
         }
         failure {
-            node ('laravel') {
-                sh '''
-                curl -s -X POST https://api.telegram.org/bot8725417417:AAEJYP7PnCqfKgMaAq7yNIZmTuRPCIbXkig/sendMessage \
-                -d chat_id=1653989745 \
-                -d text="❌ Build Failed" 
-                '''
-            }
+            sh """
+                curl -s -X POST https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage \
+                     -d chat_id=${TELEGRAM_CHAT_ID} \
+                     -d text="❌ Build or Deploy Failed"
+            """
         }
     }
 }
