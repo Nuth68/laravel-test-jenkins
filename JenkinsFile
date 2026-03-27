@@ -2,7 +2,7 @@ pipeline {
     agent {label 'laravel'}
 
     environment {
-        TELEGRAM_TOKEN = credentials('8623369528:AAEwgKFCr-Xxojkh8y4NDMMCpTfMoWIazVU')
+        TELEGRAM_TOKEN = credentials('8725417417:AAEJYP7PnCqfKgMaAq7yNIZmTuRPCIbXkig')
         TELEGRAM_CHAT_ID = credentials('1653989745')
     }
 
