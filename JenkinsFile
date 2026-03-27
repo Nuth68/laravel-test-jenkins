@@ -1,0 +1,40 @@
+pipeline {
+    agent {label 'laravel'}
+
+    environment {
+        TELEGRAM_TOKEN = credentials('8623369528:AAEwgKFCr-Xxojkh8y4NDMMCpTfMoWIazVU')
+        TELEGRAM_CHAT_ID = credentials('1653989745')
+    }
+
+    stages {
+
+        stage('Clone') {
+            steps {
+                git 'https://github.com/Nuth68/laravel-test-jenkins.git'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh '''
+                    composer install
+                    php artisan key:generate
+                    npm install
+                    npm run build
+                '''
+            }
+        }
+    }
+
+    post {
+        failure {
+            node ('laravel') {
+                sh '''
+                curl -s -X POST https://api.telegram.org/bot$TELEGRAM_TOKEN/sendMessage \
+                -d chat_id=$TELEGRAM_CHAT_ID \
+                -d text="❌ Build Failed"
+                '''
+            }
+        }
+    }
+}
