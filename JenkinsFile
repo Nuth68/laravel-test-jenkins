@@ -1,26 +1,17 @@
 pipeline {
     agent {label 'laravel'}
     stages {
-        stage('Build') {
-            steps {
-                sh '''
-                    composer install
-                    php artisan key:generate
-                    npm install
-                    npm run build
-                '''
-            }
-        }
-        stage('Setup Environment') {
-              steps {
-                 sh '''
-                    if [ ! -f .env ]; then
-                      cp .env.example .env
-                    fi
-                     php artisan key:generate
-                     '''
-                 }
-        }
+        stage('Build Laravel') {
+    steps {
+        sh '''
+            cp .env.example .env
+            composer install
+            php artisan key:generate
+            npm install
+            npm run build
+        '''
+    }
+}
         
     }
 
